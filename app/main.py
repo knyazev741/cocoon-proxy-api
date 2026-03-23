@@ -1,5 +1,6 @@
 """Cocoon API Proxy — main application."""
 
+import asyncio
 import logging
 
 from fastapi import FastAPI, Request
@@ -9,6 +10,7 @@ from app.config import settings
 from app.database import get_db, close_db
 from app.proxy import router as proxy_router, close_client
 from app.auth import create_user, verify_api_key
+from app.payments import payment_monitor_loop
 
 # Configure logging — no content, only metadata
 logging.basicConfig(
@@ -29,14 +31,21 @@ app = FastAPI(
 app.include_router(proxy_router)
 
 
+_payment_task: asyncio.Task | None = None
+
+
 @app.on_event("startup")
 async def startup():
+    global _payment_task
     await get_db()
+    _payment_task = asyncio.create_task(payment_monitor_loop())
     logger.info("Cocoon API Proxy started, upstream=%s", settings.cocoon_upstream_url)
 
 
 @app.on_event("shutdown")
 async def shutdown():
+    if _payment_task:
+        _payment_task.cancel()
     await close_client()
     await close_db()
     logger.info("Cocoon API Proxy stopped")
