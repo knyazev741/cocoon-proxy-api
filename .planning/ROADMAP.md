@@ -16,13 +16,13 @@
 4. **Privacy enforcement** — ensure no content logging, audit all write paths
 
 ## Phase 2: Billing System
-**Goal:** Per-request billing with 50% markup on Cocoon costs.
+**Goal:** Per-request billing with configurable pricing on top of Cocoon costs.
 **Requirements:** BILL-01..05
 **Delivers:** Balance checks before requests, automatic cost deduction after responses.
 
 ### Plans
 1. **Balance management** — balance field, pre-check middleware, /v1/balance endpoint
-2. **Post-charge billing** — extract usage from response, calculate cost × 1.5, atomic deduction
+2. **Post-charge billing** — extract usage from response, calculate cost with multiplier, atomic deduction
 3. **Streaming billing** — parse final SSE chunk for usage data, handle edge cases (disconnect, timeout)
 4. **Usage logging** — metadata-only usage records (timestamp, model, tokens, cost)
 

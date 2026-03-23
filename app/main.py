@@ -37,6 +37,8 @@ _payment_task: asyncio.Task | None = None
 @app.on_event("startup")
 async def startup():
     global _payment_task
+    if not settings.deposit_wallet:
+        logger.warning("COCOON_DEPOSIT_WALLET is not set — deposit and payment features will not work")
     await get_db()
     _payment_task = asyncio.create_task(payment_monitor_loop())
     logger.info("Cocoon API Proxy started, upstream=%s", settings.cocoon_upstream_url)

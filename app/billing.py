@@ -7,7 +7,7 @@ from app.database import get_db
 
 
 def calculate_cost_nanoton(usage: dict) -> int:
-    """Calculate cost in nanotons from usage data, with markup."""
+    """Calculate cost in nanotons from usage data."""
     prompt = usage.get("prompt_tokens", 0)
     completion = usage.get("completion_tokens", 0)
     # Cocoon reports total_cost but it's often 0 — always calculate manually

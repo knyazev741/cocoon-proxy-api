@@ -18,7 +18,7 @@ Simple, privacy-respecting paid API access to Cocoon AI models with zero content
 
 - [ ] OpenAI-compatible /v1/chat/completions endpoint (streaming + non-streaming)
 - [ ] API key authentication (ck_<64 hex>, stored as SHA-256)
-- [ ] Prepaid TON balance system with per-request billing (Cocoon cost × 1.5)
+- [ ] Prepaid TON balance system with per-request billing (configurable multiplier)
 - [ ] TON deposit monitoring via tonapi.io SSE (memo-based matching)
 - [ ] /v1/models, /v1/balance, /v1/deposit endpoints
 - [ ] Zero content logging — only metadata (timestamp, model, tokens, cost)
@@ -39,7 +39,7 @@ Simple, privacy-respecting paid API access to Cocoon AI models with zero content
 - Network processes ~834 TON/day (~$1,920/day) in inference payments
 - Our Cocoon client runs at localhost:10000, fully operational
 - Server has Python 3.12, domain knyazevai.work, existing nginx+certbot
-- TON wallet for deposits: EQDJxdrlRruDA9KuV7nGNXAPVs8cTIS2fbyMx2BOWioB_hib
+- TON wallet for deposits: set via COCOON_DEPOSIT_WALLET env var
 - Cocoon pricing: 20 nanograms/token base, completion ×8, reasoning ×8, cached ×0.1
 
 ## Constraints

@@ -21,7 +21,7 @@ python -m app.main
 ## Key Design Decisions
 - **Privacy first**: No prompt/response content ever written to disk
 - **Post-charge billing**: Deduct after response (token count unknown until stream ends)
-- **50% markup**: Our price = Cocoon network cost × 1.5
+- **Configurable pricing**: Cost multiplier applied on top of Cocoon network rates
 - **Upstream**: Cocoon client at localhost:10000
 
 ## Environment Variables

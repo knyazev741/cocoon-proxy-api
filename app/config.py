@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     cached_multiplier: float = 0.1
 
     # TON payments
-    deposit_wallet: str = "EQDJxdrlRruDA9KuV7nGNXAPVs8cTIS2fbyMx2BOWioB_hib"
+    deposit_wallet: str = ""  # Required: set COCOON_DEPOSIT_WALLET in .env
     tonapi_key: str = ""
 
     # Admin

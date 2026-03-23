@@ -24,7 +24,7 @@
 ### Billing
 
 - [ ] **BILL-01**: Pre-check: reject request if balance < 0.01 TON
-- [ ] **BILL-02**: Post-charge: deduct usage.total_cost × 1.5 after response completes
+- [ ] **BILL-02**: Post-charge: deduct calculated cost after response completes
 - [ ] **BILL-03**: Allow small negative balance (up to -0.05 TON) for long responses
 - [ ] **BILL-04**: GET /v1/balance returns current user balance in TON
 - [ ] **BILL-05**: Usage logging: timestamp, model, prompt_tokens, completion_tokens, cost (no content)
