@@ -51,7 +51,16 @@ def extract_comment(tx: dict) -> str:
 
 async def process_transaction(tx: dict):
     """Match transaction memo to a user and credit balance."""
+    # Skip failed/bounced transactions — funds were returned to sender
+    if not tx.get("success", False):
+        return
+
     in_msg = tx.get("in_msg", {})
+
+    # Skip bounced messages
+    if in_msg.get("bounced", False):
+        return
+
     value = in_msg.get("value", 0)
     if value <= 0:
         return

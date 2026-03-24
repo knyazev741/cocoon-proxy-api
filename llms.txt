@@ -1,0 +1,36 @@
+# Cocoon API Proxy
+
+> OpenAI-compatible API proxy for the Cocoon decentralized AI network on TON blockchain
+
+## Overview
+Cocoon API Proxy provides a standard OpenAI-format REST API with per-token billing and TON cryptocurrency payments. Drop-in replacement for any OpenAI client library — just change the base URL and API key.
+
+## API Endpoints
+- POST /v1/chat/completions — Generate AI text responses (streaming + non-streaming)
+- GET /v1/models — List available AI models
+- POST /v1/keys — Create a new API key and deposit code
+- GET /v1/balance — Check account balance in TON
+- GET /v1/deposit — Get wallet address and memo for TON deposits
+- GET /health — Service health check
+
+## Authentication
+Bearer token auth with API keys prefixed `ck_`. Create keys via POST /v1/keys. Pass as `Authorization: Bearer ck_...`.
+
+## Billing
+Per-token usage-based pricing. Deposit TON cryptocurrency to fund your account. Cost deducted after each response. HTTP 402 returned when balance is insufficient.
+
+## Quick Start
+```python
+from openai import OpenAI
+client = OpenAI(api_key="ck_your_key", base_url="http://localhost:8000/v1")
+response = client.chat.completions.create(
+    model="Qwen/Qwen3-32B",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Links
+- OpenAPI Spec: /openapi.json
+- Agent Card: /.well-known/agent.json
+- Source: https://github.com/knyazev741/cocoon-api-proxy
+- Cocoon Network: https://cocoon.ws/

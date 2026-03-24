@@ -1,0 +1,76 @@
+{
+  "name": "Cocoon API Proxy",
+  "description": "OpenAI-compatible API proxy for decentralized AI models on the Cocoon network (TON blockchain). Provides chat completions, model listing, API key management, and TON-based billing. Use when you need to query AI models like Qwen/Qwen3-32B via a standard OpenAI-format API with cryptocurrency payments.",
+  "url": "http://localhost:8000",
+  "version": "0.1.0",
+  "protocol": "openai-compatible",
+  "capabilities": {
+    "streaming": true,
+    "chat_completions": true,
+    "models_listing": true,
+    "billing": true,
+    "deposits": true
+  },
+  "authentication": {
+    "schemes": ["bearer"],
+    "description": "API key authentication. Create a key via POST /v1/keys. Pass as 'Authorization: Bearer ck_...' header. Keys are prefixed with 'ck_'.",
+    "credentials": {
+      "creation_endpoint": "/v1/keys",
+      "creation_method": "POST",
+      "token_prefix": "ck_"
+    }
+  },
+  "skills": [
+    {
+      "id": "chat-completion",
+      "name": "Chat Completion",
+      "description": "Send messages to a Cocoon AI model and receive generated text responses. Supports streaming (SSE) and non-streaming modes. Use when you need AI-generated text from models like Qwen/Qwen3-32B.",
+      "endpoint": "/v1/chat/completions",
+      "method": "POST",
+      "input_content_types": ["application/json"],
+      "output_content_types": ["application/json", "text/event-stream"]
+    },
+    {
+      "id": "list-models",
+      "name": "List Models",
+      "description": "Retrieve the list of AI models available on the Cocoon network. Use to discover valid model IDs before making chat completion requests.",
+      "endpoint": "/v1/models",
+      "method": "GET",
+      "output_content_types": ["application/json"]
+    },
+    {
+      "id": "create-api-key",
+      "name": "Create API Key",
+      "description": "Generate a new API key and unique deposit code for a new user account. The key is shown once at creation. Use when setting up a new client for the proxy.",
+      "endpoint": "/v1/keys",
+      "method": "POST",
+      "output_content_types": ["application/json"]
+    },
+    {
+      "id": "check-balance",
+      "name": "Check Balance",
+      "description": "Return current TON balance for the authenticated API key. Use before making requests to verify sufficient funds are available.",
+      "endpoint": "/v1/balance",
+      "method": "GET",
+      "output_content_types": ["application/json"]
+    },
+    {
+      "id": "deposit-info",
+      "name": "Get Deposit Info",
+      "description": "Return TON wallet address and unique memo code for depositing funds. Use when you need to add TON to fund an API key account.",
+      "endpoint": "/v1/deposit",
+      "method": "GET",
+      "output_content_types": ["application/json"]
+    }
+  ],
+  "pricing": {
+    "model": "per-token",
+    "currency": "TON",
+    "description": "Per-token billing with configurable markup. Prompt tokens: ~30 nanoton/token, completion tokens: ~240 nanoton/token. Minimum balance: 0.01 TON.",
+    "billing_endpoint": "/v1/balance",
+    "deposit_endpoint": "/v1/deposit"
+  },
+  "openapi_spec": "/openapi.json",
+  "llms_txt": "/llms.txt",
+  "source_code": "https://github.com/knyazev741/cocoon-api-proxy"
+}

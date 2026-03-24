@@ -1,0 +1,228 @@
+# Cocoon API Proxy — Full Documentation
+
+> OpenAI-compatible API proxy for the Cocoon decentralized AI network on TON blockchain
+
+## Overview
+
+Cocoon API Proxy is a FastAPI-based REST API that acts as a paid proxy to the Cocoon decentralized AI network. It provides an OpenAI-compatible interface so any existing OpenAI client library works out of the box — just change the base URL and API key.
+
+Users create an API key, deposit TON cryptocurrency to a wallet with a memo code, and make standard OpenAI-format API calls. No need to compile C++ clients or deploy smart contracts.
+
+## Architecture
+
+```
+User --> [Cocoon API Proxy :8000] --> [Cocoon Client :10000] --> [Cocoon Network (TON)]
+                |
+           SQLite (WAL)
+         balances, usage
+```
+
+- FastAPI async proxy with SSE streaming
+- SQLite with WAL mode for concurrent reads
+- tonapi.io polling for real-time deposit detection
+- Privacy-first: no prompt/response content logged or stored
+
+## Authentication
+
+### API Keys
+- Format: `ck_` followed by 64 hex characters (67 chars total)
+- Created via `POST /v1/keys`
+- Stored as SHA-256 hash (plaintext shown once at creation)
+- Passed as `Authorization: Bearer ck_...`
+
+### Admin Token
+If `COCOON_ADMIN_TOKEN` is set, key creation requires admin auth. If empty, registration is open.
+
+## API Reference
+
+### POST /v1/chat/completions
+Send a conversation to a Cocoon AI model and receive a response. Supports both streaming (SSE) and non-streaming modes.
+
+**Request:**
+```json
+{
+  "model": "Qwen/Qwen3-32B",
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ],
+  "stream": false,
+  "max_tokens": 1024,
+  "temperature": 0.7
+}
+```
+
+**Response (non-streaming):**
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1711680000,
+  "model": "Qwen/Qwen3-32B",
+  "choices": [
+    {
+      "index": 0,
+      "message": {"role": "assistant", "content": "Hello! How can I help?"},
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 7,
+    "total_tokens": 22
+  }
+}
+```
+
+**Streaming:** Set `"stream": true`. Response is SSE with `data: {chunk}` lines, ending with `data: [DONE]`.
+
+**Errors:**
+- 400: Missing `model` or `messages` field
+- 401: Invalid or missing API key
+- 402: Insufficient balance (includes deposit instructions)
+
+### GET /v1/models
+List available AI models on the Cocoon network. No authentication required.
+
+**Response:**
+```json
+{
+  "object": "list",
+  "data": [
+    {"id": "Qwen/Qwen3-32B", "object": "model", "owned_by": "cocoon"}
+  ]
+}
+```
+
+### POST /v1/keys
+Create a new API key and deposit code. Returns the plaintext key once — save it immediately.
+
+**Response (201):**
+```json
+{
+  "api_key": "ck_a1b2c3...",
+  "deposit_code": "xK9mP2qR",
+  "balance_ton": 0.0,
+  "created_at": "2026-03-23 12:00:00"
+}
+```
+
+### GET /v1/balance
+Check current account balance. Requires Bearer auth.
+
+**Response:**
+```json
+{
+  "balance_ton": 1.5,
+  "balance_nanoton": 1500000000
+}
+```
+
+### GET /v1/deposit
+Get deposit instructions. Requires Bearer auth.
+
+**Response:**
+```json
+{
+  "wallet": "EQDJxdrl...",
+  "memo": "xK9mP2qR",
+  "instructions": "Send TON to ... with the comment/memo: xK9mP2qR. Balance credited within ~30 seconds."
+}
+```
+
+### GET /health
+Health check endpoint. No authentication required.
+
+**Response:**
+```json
+{"status": "ok"}
+```
+
+## Billing
+
+### Pricing Model
+- Per-token usage-based billing
+- Configurable markup multiplier (default 1.5x on top of network costs)
+- Separate rates for prompt, completion, cached, and reasoning tokens
+- Post-charge: cost deducted after response completes (token count unknown until stream ends)
+
+### Token Pricing (default, in nanoton per token)
+- Prompt tokens: 20 nanoton * 1.0x * 1.5x markup = 30 nanoton/token
+- Completion tokens: 20 nanoton * 8.0x * 1.5x markup = 240 nanoton/token
+- Reasoning tokens: 20 nanoton * 8.0x * 1.5x markup = 240 nanoton/token
+- Cached prompt tokens: 20 nanoton * 0.1x * 1.5x markup = 3 nanoton/token
+
+### Balance Requirements
+- Minimum balance to make requests: 0.01 TON
+- Maximum allowed overdraft: 0.05 TON
+
+### Deposits
+Send TON to the proxy wallet with your unique memo code as the transaction comment. Balance is credited automatically within ~30 seconds via tonapi.io polling.
+
+## Error Codes
+
+| Code | Type | HTTP | Description |
+|------|------|------|-------------|
+| invalid_api_key | invalid_auth | 401 | API key is missing, malformed, or not found |
+| forbidden | auth_error | 403 | Admin token required for key creation |
+| insufficient_balance | insufficient_balance | 402 | Balance below minimum, deposit more TON |
+| internal_error | server_error | 500 | Unexpected server error |
+
+## Configuration
+
+All settings via environment variables with `COCOON_` prefix:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| COCOON_UPSTREAM_URL | http://localhost:10000 | Cocoon client URL |
+| COCOON_DEPOSIT_WALLET | (required) | TON wallet address for deposits |
+| COCOON_DATABASE_PATH | ./data/cocoon_proxy.db | SQLite database path |
+| COCOON_HOST | 0.0.0.0 | Server bind address |
+| COCOON_PORT | 8000 | Server port |
+| COCOON_MARKUP_MULTIPLIER | 1.5 | Price multiplier |
+| COCOON_MIN_BALANCE_TON | 0.01 | Minimum balance for requests |
+| COCOON_MAX_OVERDRAFT_TON | 0.05 | Maximum negative balance |
+| COCOON_TONAPI_KEY | (empty) | tonapi.io API key |
+| COCOON_ADMIN_TOKEN | (empty) | Admin token for key creation |
+| COCOON_MAX_TOKENS_CAP | 128000 | Max allowed max_tokens |
+
+## Client Libraries
+
+Works with any OpenAI-compatible client:
+
+### Python
+```python
+from openai import OpenAI
+client = OpenAI(api_key="ck_your_key", base_url="http://localhost:8000/v1")
+response = client.chat.completions.create(
+    model="Qwen/Qwen3-32B",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+### JavaScript/TypeScript
+```javascript
+import OpenAI from 'openai';
+const client = new OpenAI({ apiKey: 'ck_your_key', baseURL: 'http://localhost:8000/v1' });
+const response = await client.chat.completions.create({
+  model: 'Qwen/Qwen3-32B',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+```
+
+### curl
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer ck_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "Qwen/Qwen3-32B", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
+## Privacy
+- No prompt or response content is ever logged or stored
+- Only metadata logged: timestamp, model, token counts, cost
+- API keys stored as SHA-256 hashes
+
+## Source
+https://github.com/knyazev741/cocoon-api-proxy
